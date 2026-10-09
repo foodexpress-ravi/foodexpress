@@ -9,9 +9,28 @@ export class HttpError extends Error {
   }
 }
 
-/** Wraps a route handler: known errors -> clean JSON, unknown errors -> generic message (no stack traces). */
-export function apiHandler<C = unknown>(fn: (req: Request, ctx?: C) => Promise<Response>) {
-  return async (req: Request, ctx?: C) => {
+/** Wraps a route handler with no dynamic segments: known errors -> clean JSON, unknown errors -> generic message (no stack traces). */
+export function apiHandler(fn: (req: Request) => Promise<Response>) {
+  return async (req: Request) => {
+    try {
+      return await fn(req);
+    } catch (e) {
+      if (e instanceof HttpError) return NextResponse.json({ error: e.message }, { status: e.status });
+      if (e instanceof ZodError) return NextResponse.json({ error: e.issues[0]?.message ?? "Invalid input." }, { status: 400 });
+      console.error(e);
+      return NextResponse.json({ error: "Something went wrong. Please try again." }, { status: 500 });
+    }
+  };
+}
+
+/**
+ * Wraps a route handler for a dynamic segment (e.g. [id]). The context parameter is REQUIRED here
+ * (not optional) because Next.js's production build (`next build`) generates a strict type for every
+ * dynamic route handler and rejects an optional/undefined-able context - it only showed up as a build
+ * failure, never in `next dev`, which is why this split exists.
+ */
+export function apiHandlerWithParams<C>(fn: (req: Request, ctx: C) => Promise<Response>) {
+  return async (req: Request, ctx: C) => {
     try {
       return await fn(req, ctx);
     } catch (e) {

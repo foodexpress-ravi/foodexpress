@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
-import { apiHandler, HttpError } from "@/lib/http";
+import { HttpError, apiHandlerWithParams } from "@/lib/http";
 
-export const GET = apiHandler(async (_req, ctx?: { params: Promise<{ slug: string }> }) => {
-  const { slug } = (await ctx!.params);
+export const GET = apiHandlerWithParams<{ params: Promise<{ slug: string }> }>(async (_req, ctx) => {
+  const { slug } = (await ctx.params);
   const { rows: restRows } = await pool.query(
     `SELECT id, name, slug, description, image_url, cover_url, address, rating_avg, rating_count,
             delivery_time_min, delivery_fee, min_order, is_veg_only, is_open

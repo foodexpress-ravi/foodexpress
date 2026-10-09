@@ -1,15 +1,15 @@
 import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { requireRole } from "@/lib/auth";
-import { apiHandler, HttpError, readJson } from "@/lib/http";
+import { HttpError, readJson, apiHandlerWithParams } from "@/lib/http";
 import { z } from "zod";
 
 const schema = z.object({ status: z.enum(["paid", "failed", "refunded"]), transactionReference: z.string().trim().max(100).optional() });
 
 // Admin manually confirms a UPI payment after checking the bank/UPI app - this is a real state change, not a fake gateway callback.
-export const PATCH = apiHandler(async (req, ctx?: { params: Promise<{ id: string }> }) => {
+export const PATCH = apiHandlerWithParams<{ params: Promise<{ id: string }> }>(async (req, ctx) => {
   const admin = await requireRole("ADMIN");
-  const { id } = await ctx!.params;
+  const { id } = await ctx.params;
   const d = schema.parse(await readJson(req));
   const client = await pool.connect();
   try {

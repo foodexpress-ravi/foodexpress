@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { requireRole } from "@/lib/auth";
-import { apiHandler, HttpError, readJson } from "@/lib/http";
+import { HttpError, readJson, apiHandlerWithParams } from "@/lib/http";
 import { z } from "zod";
 
 const schema = z.object({
@@ -15,9 +15,9 @@ const schema = z.object({
 });
 
 // Every statement joins through restaurants.owner_id, so an owner can only ever touch their own menu items.
-export const PATCH = apiHandler(async (req, ctx?: { params: Promise<{ id: string }> }) => {
+export const PATCH = apiHandlerWithParams<{ params: Promise<{ id: string }> }>(async (req, ctx) => {
   const user = await requireRole("RESTAURANT_OWNER");
-  const { id } = await ctx!.params;
+  const { id } = await ctx.params;
   const d = schema.parse(await readJson(req));
   const { rows } = await pool.query(
     `UPDATE food_items f SET
@@ -31,9 +31,9 @@ export const PATCH = apiHandler(async (req, ctx?: { params: Promise<{ id: string
   return NextResponse.json({ item: rows[0] });
 });
 
-export const DELETE = apiHandler(async (_req, ctx?: { params: Promise<{ id: string }> }) => {
+export const DELETE = apiHandlerWithParams<{ params: Promise<{ id: string }> }>(async (_req, ctx) => {
   const user = await requireRole("RESTAURANT_OWNER");
-  const { id } = await ctx!.params;
+  const { id } = await ctx.params;
   const { rowCount } = await pool.query(
     `DELETE FROM food_items f USING restaurants r WHERE f.id = $1 AND f.restaurant_id = r.id AND r.owner_id = $2`,
     [id, user.id],

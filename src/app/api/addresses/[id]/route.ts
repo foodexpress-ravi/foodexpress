@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { requireRole } from "@/lib/auth";
-import { apiHandler, HttpError, readJson } from "@/lib/http";
+import { HttpError, readJson, apiHandlerWithParams } from "@/lib/http";
 import { addressSchema } from "@/lib/validation";
 
 // Ownership check on every statement: user_id = $owner is always in the WHERE clause.
-export const PATCH = apiHandler(async (req, ctx?: { params: Promise<{ id: string }> }) => {
+export const PATCH = apiHandlerWithParams<{ params: Promise<{ id: string }> }>(async (req, ctx) => {
   const user = await requireRole("CUSTOMER");
-  const { id } = await ctx!.params;
+  const { id } = await ctx.params;
   const d = addressSchema.parse(await readJson(req));
   const client = await pool.connect();
   try {
@@ -29,9 +29,9 @@ export const PATCH = apiHandler(async (req, ctx?: { params: Promise<{ id: string
   }
 });
 
-export const DELETE = apiHandler(async (_req, ctx?: { params: Promise<{ id: string }> }) => {
+export const DELETE = apiHandlerWithParams<{ params: Promise<{ id: string }> }>(async (_req, ctx) => {
   const user = await requireRole("CUSTOMER");
-  const { id } = await ctx!.params;
+  const { id } = await ctx.params;
   const { rowCount } = await pool.query(`DELETE FROM addresses WHERE id = $1 AND user_id = $2`, [id, user.id]);
   if (!rowCount) throw new HttpError(404, "Address not found.");
   return NextResponse.json({ ok: true });

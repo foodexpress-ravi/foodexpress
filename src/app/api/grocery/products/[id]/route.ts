@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { requireRole } from "@/lib/auth";
-import { apiHandler, HttpError, readJson } from "@/lib/http";
+import { HttpError, readJson, apiHandlerWithParams } from "@/lib/http";
 import { z } from "zod";
 
 const schema = z.object({
@@ -16,9 +16,9 @@ const schema = z.object({
   isAvailable: z.boolean().optional(),
 });
 
-export const PATCH = apiHandler(async (req, ctx?: { params: Promise<{ id: string }> }) => {
+export const PATCH = apiHandlerWithParams<{ params: Promise<{ id: string }> }>(async (req, ctx) => {
   const user = await requireRole("GROCERY_OWNER");
-  const { id } = await ctx!.params;
+  const { id } = await ctx.params;
   const d = schema.parse(await readJson(req));
   const { rows } = await pool.query(
     `UPDATE grocery_products p SET
@@ -34,9 +34,9 @@ export const PATCH = apiHandler(async (req, ctx?: { params: Promise<{ id: string
   return NextResponse.json({ product: rows[0] });
 });
 
-export const DELETE = apiHandler(async (_req, ctx?: { params: Promise<{ id: string }> }) => {
+export const DELETE = apiHandlerWithParams<{ params: Promise<{ id: string }> }>(async (_req, ctx) => {
   const user = await requireRole("GROCERY_OWNER");
-  const { id } = await ctx!.params;
+  const { id } = await ctx.params;
   const { rowCount } = await pool.query(
     `DELETE FROM grocery_products p USING grocery_stores s WHERE p.id = $1 AND p.grocery_store_id = s.id AND s.owner_id = $2`,
     [id, user.id],

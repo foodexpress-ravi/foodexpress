@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { requireRole } from "@/lib/auth";
-import { apiHandler, HttpError, readJson } from "@/lib/http";
+import { HttpError, readJson, apiHandlerWithParams } from "@/lib/http";
 import { z } from "zod";
 
-export const PATCH = apiHandler(async (req, ctx?: { params: Promise<{ type: string; id: string }> }) => {
+export const PATCH = apiHandlerWithParams<{ params: Promise<{ type: string; id: string }> }>(async (req, ctx) => {
   await requireRole("ADMIN");
-  const { type, id } = await ctx!.params;
+  const { type, id } = await ctx.params;
   const { status } = z.object({ status: z.enum(["APPROVED", "REJECTED"]) }).parse(await readJson(req));
   const table = type === "grocery" ? "grocery_stores" : type === "restaurant" ? "restaurants" : type === "delivery" ? "delivery_partners" : null;
   if (!table) throw new HttpError(400, "Invalid seller type.");

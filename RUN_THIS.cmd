@@ -1,6 +1,6 @@
 @echo off
-echo Ye script foodexpress project ke payout API file ko sahi jagah bana dega.
+echo Ye script 23 files ko sahi banake project me likh dega (Vercel build fix).
 echo.
-node "%~dp0fix_delivery_payout.js"
+node "%~dp0apply_route_fix.js"
 echo.
 pause
